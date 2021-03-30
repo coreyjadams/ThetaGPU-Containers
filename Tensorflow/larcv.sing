@@ -1,0 +1,39 @@
+Bootstrap: docker
+From: nvcr.io/nvidia/tensorflow:21.03-tf2-py3
+
+
+%help
+
+To start your container simply try
+singularity exec THIS_CONTAINER.simg bash
+
+To use GPUs, try
+singularity exec --nv THIS_CONTAINER.simg bash
+
+%labels
+Maintainer coreyjadams
+
+%environment
+
+%post
+
+    # Install HDF5
+    git clone https://github.com/HDFGroup/hdf5.git
+    cd hdf5
+    git checkout hdf5-1_12_0
+    ./configure
+    make -j 128 install --prefix=/usr/
+    cd -
+
+
+
+    # Install python packages:
+    pip install scikit-build
+    pip install numpy
+    pip install hydra-core --pre
+
+    # Install larcv3:
+    git clone https://github.com/DeepLearnPhysics/larcv3.git
+    cd larcv3
+    python setup.py build -j 128
+    python setup.py install -j 128
