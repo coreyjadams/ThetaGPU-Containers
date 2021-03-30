@@ -1,0 +1,29 @@
+#!/bin/bash
+#COBALT -t 60
+#COBALT -n 1
+#COBALT -A datascience
+#COBALT --attrs pubnet=true fakeroot=true
+
+export SINGULARITY_TMPDIR=/scratch/singularity-tmpdir
+mkdir $SINGULARITY_TMPDIR
+
+SINGULARITY_CACHEDIR=/scratch/singularity-cachedir/
+mkdir $SINGULARITY_CACHEDIR
+
+export LATEST=21.03
+
+#Bootstrap the core containers:
+
+
+# Build the tensorflow container:
+singularity build --fakeroot nvidia-tensorflow-larcv-${LATEST}.sif tensorflow/larcv.sing
+
+# Build the pytorch container:
+singularity build --fakeroot nvidia-pytorch-${LATEST}.sif pytorch/core.sing
+
+# Build the pytorch-larcv container:
+singularity build --fakeroot nvidia-pytorch.sif pytorch/larcv.sing
+
+# Stage out the containers:
+
+
