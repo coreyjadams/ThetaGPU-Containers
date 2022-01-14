@@ -14,6 +14,9 @@ Maintainer coreyjadams
 
 %environment
 
+    export PATH=$PATH:/usr/local/mpich//install/bin
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/mpich//install/lib
+
 %post
 
     export DEBIAN_FRONTEND=noninteractive
@@ -25,9 +28,29 @@ Maintainer coreyjadams
     apt-get update -y
     apt-get install -y build-essential
 
+    # Download tools
+    apt-get install -y wget curl git
+
     apt-get install -y python3-pip
 
-    apt-get install -y mpich
+    # install MPICH
+    wget -q https://www.mpich.org/static/downloads/3.4.3/mpich-3.4.3.tar.gz
+    tar xf mpich-3.4.3.tar.gz
+    rm mpich-3.4.3.tar.gz
+    cd mpich-3.4.3
+
+    # disable the addition of the RPATH to compiled executables
+    # this allows us to override the MPI libraries to use those
+    # found via LD_LIBRARY_PATH
+    ./configure --prefix=/usr/local/mpich/install --disable-wrapper-rpath \
+    --with-device=ch4:ofi --disable-fortran
+    make -j 64 install
+    # add to local environment to build pi.c
+    export PATH=$PATH:/usr/local/mpich//install/bin
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/mpich//install/lib
+    env | sort
+    cd ..
+    rm -rf mpich-3.4.3
 
 
 
