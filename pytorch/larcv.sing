@@ -1,0 +1,65 @@
+Bootstrap: docker
+From: nvcr.io/nvidia/pytorch:21.11-py3
+
+
+%help
+
+To start your container simply try
+singularity exec THIS_CONTAINER.simg bash
+
+To use GPUs, try
+singularity exec --nv THIS_CONTAINER.simg bash
+
+%labels
+Maintainer coreyjadams
+
+%environment
+
+    # For MPICH:
+    export PATH=/usr/local/mpich/install/bin/:${PATH}
+    export LD_LIBRARY_PATH=/usr/local/mpich/install/lib/:${LD_LIBRARY_PATH}
+
+%post
+
+
+
+    # Install MPICH
+    wget -q https://www.mpich.org/static/downloads/3.4.2/mpich-3.4.2.tar.gz
+    tar xf mpich-3.4.2.tar.gz
+    rm mpich-3.4.2.tar.gz
+    cd mpich-3.4.2
+
+    # disable the addition of the RPATH to compiled executables
+    # this allows us to override the MPI libraries to use those
+    # found via LD_LIBRARY_PATH
+    ./configure --prefix=/usr/local/mpich/install --disable-wrapper-rpath
+    make -j 4 install
+
+    # add to local environment to build pi.c
+    export PATH=$PATH:/usr/local/mpich//install/bin
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/mpich//install/lib
+
+
+    # Install mpi4py
+    CC=$(which mpicc) CXX=$(which mpicxx) pip install --no-cache-dir mpi4py
+
+    # Install HDF5
+    git clone https://github.com/HDFGroup/hdf5.git
+    cd hdf5
+    git checkout hdf5-1_12_0
+    ./configure --prefix=/usr/
+    make -j 128 install
+    cd -
+
+    # Install python packages:
+    pip install scikit-build
+    pip install numpy
+    pip install --upgrade hydra-core --pre
+    pip install hydra-core>1.1.0
+
+    # Install larcv3:
+    git clone https://github.com/DeepLearnPhysics/larcv3.git
+    cd larcv3
+    git submodule update --init
+    python setup.py build -j 128
+    python setup.py install -j 128

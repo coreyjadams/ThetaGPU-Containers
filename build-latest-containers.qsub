@@ -1,29 +1,45 @@
 #!/bin/bash
-#COBALT -t 60
+#COBALT -t 59
 #COBALT -n 1
 #COBALT -A datascience
-#COBALT --attrs pubnet=true fakeroot=true
+#COBALT -q single-gpu
+#COBALT --attrs pubnet=true:fakeroot=true
 
-export SINGULARITY_TMPDIR=/scratch/singularity-tmpdir
+WORKDIR=/home/cadams/ThetaGPU/ThetaGPU-Containers
+cd $WORKDIR
+
+export SINGULARITY_TMPDIR=/tmp/singularity-tmpdir
 mkdir $SINGULARITY_TMPDIR
 
-SINGULARITY_CACHEDIR=/scratch/singularity-cachedir/
+SINGULARITY_CACHEDIR=/tmp/singularity-cachedir/
 mkdir $SINGULARITY_CACHEDIR
 
-export LATEST=21.03
+export LATEST=21.11
 
 #Bootstrap the core containers:
 
+export https_proxy=http://theta-proxy.tmi.alcf.anl.gov:3128
 
-# Build the tensorflow container:
-singularity build --fakeroot nvidia-tensorflow-larcv-${LATEST}.sif tensorflow/larcv.sing
+OUTPUT_DIR=/grand/projects/datascience/cadams/containers/
 
-# Build the pytorch container:
-singularity build --fakeroot nvidia-pytorch-${LATEST}.sif pytorch/core.sing
+
+# Build the tensorflow-larcv container:
+singularity build --fakeroot tf2_${LATEST}-py3-larcv.simg tensorflow/larcv.sing
+mv tf2_${LATEST}-py3-larcv.simg ${OUTPUT_DIR}/tensorflow2/
+
+
 
 # Build the pytorch-larcv container:
-singularity build --fakeroot nvidia-pytorch.sif pytorch/larcv.sing
+singularity build --fakeroot pytorch-${LATEST}-py3-larcv.simg pytorch/larcv.sing
+mv pytorch-${LATEST}-py3-larcv.simg ${OUTPUT_DIR}/pytorch/
+
+
+# Build the pytorch container:
+singularity build --fakeroot pytorch-${LATEST}-py3.simg pytorch/core.sing
+
+# Build the tensorflow container:
+singularity build --fakeroot tf2_${LATEST}-py3.simg tensorflow/core.sing
 
 # Stage out the containers:
-
-
+mv tf2_${LATEST}-py3.simg /lus/theta-fs0/software/thetagpu/nvidia-containers/tensorflow2/
+mv pytorch-${LATEST}-py3.simg /lus/theta-fs0/software/thetagpu/nvidia-containers/pytorch/

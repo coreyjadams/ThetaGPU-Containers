@@ -1,0 +1,56 @@
+Bootstrap: docker
+From: nvidia/cuda:11.5.1-cudnn8-devel-ubuntu20.04
+
+%help
+
+To start your container simply try
+singularity exec THIS_CONTAINER.simg bash
+
+To use GPUs, try
+singularity exec --nv THIS_CONTAINER.simg bash
+
+%labels
+Maintainer coreyjadams
+
+%environment
+
+%post
+
+    export DEBIAN_FRONTEND=noninteractive
+    echo "deb [by-hash=no] http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64 /" > /etc/apt/sources.list.d/cuda.list
+
+    export http_proxy=http://theta-proxy.tmi.alcf.anl.gov:3128
+    export https_proxy=https://theta-proxy.tmi.alcf.anl.gov:3128
+
+    apt-get update -y
+    apt-get install -y build-essential
+
+    apt-get install -y python3-pip
+
+    apt-get install -y mpich
+
+
+
+    # Install mpi4py
+    CC=$(which mpicc) CXX=$(which mpicxx) pip install --no-cache-dir mpi4py
+
+    # Install HDF5
+    #git clone https://github.com/HDFGroup/hdf5.git
+    #cd hdf5
+    #git checkout hdf5-1_12_0
+    #./configure --prefix=/usr/
+    #make -j 128 install
+    #cd -
+
+    # Install python packages:
+    #pip install scikit-build
+    #pip install numpy
+    #pip install --upgrade hydra-core --pre
+    #pip install hydra-core>1.1.0
+
+    # Install larcv3:
+    #git clone https://github.com/DeepLearnPhysics/larcv3.git
+    #cd larcv3
+    #git submodule update --init
+    #python setup.py build -j 128
+    #python setup.py install -j 128
