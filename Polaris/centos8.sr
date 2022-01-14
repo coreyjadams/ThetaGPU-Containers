@@ -1,0 +1,80 @@
+Bootstrap: docker
+From: nvidia/cuda:11.4.1-cudnn8-devel-centos8
+
+%help
+
+To start your container simply try
+singularity exec THIS_CONTAINER.simg bash
+
+To use GPUs, try
+singularity exec --nv THIS_CONTAINER.simg bash
+
+%labels
+Maintainer coreyjadams
+
+%environment
+    export MPICH_DIR=/opt/mpich/
+    export PATH=$MPICH_DIR/bin:$PATH
+    export LD_LIBRARY_PATH=$MPICH_DIR/lib:$LD_LIBRARY_PATH
+    export MANPATH=$MPICH_DIR/share/man:$MANPATH
+
+    export SINGULARITY_MPICH_DIR=$MPICH_DIR
+    export SINGULARITYENV_APPEND_PATH=$MPICH_DIR/bin
+    export SINGULAIRTYENV_APPEND_LD_LIBRARY_PATH=$MPICH_DIR/lib
+%post
+
+    # yum basics
+    # dnf update -y
+    dnf -y group install "Development Tools"
+    dnf -y install wget
+
+    # Install python:
+    dnf -y install python3-devel
+    alternatives --set python /usr/bin/python3
+
+    # Get mpich:
+    git clone https://github.com/pmodels/mpich.git
+    cd mpich/
+    git submodule update --init
+    ./autogen.sh
+    pwd
+    ls
+    ./configure --prefix=/opt/mpich/ \
+    --with-device=ch4:ofi \
+    --with-libfabric=embedded \
+    --disable-fortran CFLAGS=" -Wall -pg" CXXFLAGS="-Wall -pg"
+    make -j 128
+    make install
+
+    # Enable mpich for the rest of the build:
+    export MPICH_DIR=/opt/mpich/
+    export PATH=$MPICH_DIR/bin:$PATH
+    export LD_LIBRARY_PATH=$MPICH_DIR/lib:$LD_LIBRARY_PATH
+    export MANPATH=$MPICH_DIR/share/man:$MANPATH
+
+    # Install mpi4py
+    CC=$(which mpicc) CXX=$(which mpicxx) pip3 install --no-cache-dir mpi4py
+
+
+    # dnf -y install hdf5 hdf5-devel
+
+    # Install HDF5
+    #git clone https://github.com/HDFGroup/hdf5.git
+    #cd hdf5
+    #git checkout hdf5-1_12_0
+    #./configure --prefix=/usr/
+    #make -j 128 install
+    #cd -
+
+    # Install python packages:
+    #pip install scikit-build
+    #pip install numpy
+    #pip install --upgrade hydra-core --pre
+    #pip install hydra-core>1.1.0
+
+    # Install larcv3:
+    #git clone https://github.com/DeepLearnPhysics/larcv3.git
+    #cd larcv3
+    #git submodule update --init
+    #python setup.py build -j 128
+    #python setup.py install -j 12
